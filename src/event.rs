@@ -1,16 +1,19 @@
 use std::collections::HashMap;
 
+#[derive(Debug)]
 pub enum Metric {
     Int64(i64),
     Double(f64),
     Float(f32)
 }
 
+#[derive(Debug, PartialEq, Eq)]
 pub enum Time {
     Seconds(i64),
     Micros(i64)
 }
 
+#[derive(Debug)]
 pub struct Event {
     pub time: Option<Time>,
     pub state: Option<String>,
@@ -26,6 +29,7 @@ pub struct Event {
 
 pub type Query = String;
 
+#[derive(Debug)]
 pub struct Message {
     pub ok: Option<bool>,
     pub error: Option<String>,

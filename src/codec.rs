@@ -1,7 +1,18 @@
 use proto::proto;
+use std::collections::HashMap;
 use protobuf::{RepeatedField};
 use event;
 
+/// Converts a event::Event to a proto::Event
+///
+/// # Example
+///
+/// ```
+/// let e = event::Event {
+///         ...
+///         };
+/// let result = event_to_proto(&e);
+/// ```
 pub fn event_to_proto(event: &event::Event) -> proto::Event {
     let mut e = proto::Event::new();
     if let Some(ref time) = event.time {
@@ -53,12 +64,142 @@ pub fn event_to_proto(event: &event::Event) -> proto::Event {
     e
 }
 
+/// Convert a proto::Event to a event::Event
+///
+/// # Example
+///
+/// ```
+/// let mut e = proto::Event::new();
+/// let result = proto_to_event(&e);
+/// ```
+pub fn proto_to_event(proto_event: &proto::Event) -> event::Event {
+    let mut e = event::Event::new();
+
+    // time_micros priority
+    if proto_event.has_time_micros() {
+        e.time = Some(event::Time::Micros(proto_event.get_time_micros()));
+    }
+    else if proto_event.has_time() {
+        e.time = Some(event::Time::Seconds(proto_event.get_time()));
+    }
+
+    if proto_event.has_state() {
+        e.state = Some(proto_event.get_state().to_owned());
+    }
+    if proto_event.has_service() {
+        e.service = Some(proto_event.get_service().to_owned());
+    }
+    if proto_event.has_host() {
+        e.host = Some(proto_event.get_host().to_owned());
+    }
+    if proto_event.has_description() {
+        e.description = Some(proto_event.get_description().to_owned());
+    }
+    if proto_event.has_ttl() {
+        e.ttl = Some(proto_event.get_ttl());
+    }
+
+    // metric priority
+    if proto_event.has_metric_sint64() {
+        e.metric = Some(event::Metric::Int64(proto_event.get_metric_sint64()));
+    }
+    else if proto_event.has_metric_d() {
+        e.metric = Some(event::Metric::Double(proto_event.get_metric_d()));
+    }
+    else if proto_event.has_metric_f() {
+        e.metric = Some(event::Metric::Float(proto_event.get_metric_f()));
+    }
+
+    let tags = proto_event.get_tags();
+    match tags.len() {
+        0 => e.tags = None,
+        _ => e.tags = Some(tags.to_vec())
+    }
+    let attributes = proto_event.get_attributes();
+    match attributes.len() {
+        0 => e.attributes = None,
+        _ => e.attributes = {
+            let mut attr_map = HashMap::new();
+            for a in attributes {
+                attr_map.insert(a.get_key().to_owned(), a.get_value().to_owned());
+            }
+            Some(attr_map)
+        }
+    }
+    e
+}
+
 #[cfg(test)]
 mod tests {
-    use super::event_to_proto;
+    use super::{event_to_proto, proto_to_event};
     use std::collections::HashMap;
+    use protobuf::{RepeatedField};
     use proto::proto;
     use event;
+
+    #[test]
+    fn proto_to_event_test() {
+        let mut e = proto::Event::new();
+        e.set_time(1);
+        e.set_time_micros(1000000);
+        e.set_state("critical".to_owned());
+        e.set_service("foo".to_owned());
+        e.set_host("bar".to_owned());
+        e.set_description("description".to_owned());
+        e.set_ttl(10.0);
+        e.set_metric_sint64(10);
+        e.set_metric_d(10.1);
+        e.set_metric_f(10.2);
+        e.set_tags(RepeatedField::from_vec(vec!["t1".to_owned(), "t2".to_owned()]));
+        let mut attr = proto::Attribute::new();
+        attr.set_key("k1".to_owned());
+        attr.set_value("v1".to_owned());
+        e.set_attributes(RepeatedField::from_vec(vec![attr]));
+
+        let result = proto_to_event(&e);
+        let mut attr = HashMap::new();
+        attr.insert("k1".to_owned(), "v1".to_owned());
+
+        assert_eq!(result.time, Some(event::Time::Micros(1000000)));
+        assert_eq!(result.state, Some("critical".to_owned()));
+        assert_eq!(result.service, Some("foo".to_owned()));
+        assert_eq!(result.host, Some("bar".to_owned()));
+        assert_eq!(result.description, Some("description".to_owned()));
+        assert_eq!(result.tags, Some(vec!["t1".to_owned(), "t2".to_owned()]));
+        assert_eq!(result.ttl, Some(10.0));
+        assert_eq!(result.attributes, Some(attr));
+
+        // how to compare enum with float easily ?
+        match result.metric {
+            Some(event::Metric::Int64(v)) => assert_eq!(v, 10),
+            _ => panic!("error in test")
+        }
+
+        let mut e = proto::Event::new();
+        e.set_metric_d(10.1);
+        e.set_metric_f(10.2);
+        e.set_time(10);
+
+        let result = proto_to_event(&e);
+
+        assert_eq!(result.time, Some(event::Time::Seconds(10)));
+        match result.metric {
+            Some(event::Metric::Double(v)) => assert_eq!(v, 10.1),
+            _ => panic!("error in test")
+        }
+
+        let mut e = proto::Event::new();
+        e.set_metric_f(10.2);
+        e.set_time(10);
+
+        let result = proto_to_event(&e);
+
+        assert_eq!(result.time, Some(event::Time::Seconds(10)));
+        match result.metric {
+            Some(event::Metric::Float(v)) => assert_eq!(v, 10.2),
+            _ => panic!("error in test")
+        }
+    }
 
     #[test]
     fn event_to_proto_test() {
@@ -142,6 +283,5 @@ mod tests {
         assert_eq!(result.has_metric_d(), false);
         assert_eq!(result.has_metric_sint64(), false);
     }
-
 }
 
