@@ -8,16 +8,22 @@ use byteorder::WriteBytesExt;
 use protobuf::Message;
 use byteorder::BigEndian;
 use protobuf;
+use tokio_core::net::TcpStream;
+use tokio_proto::{TcpClient, TcpServer};
 use bytes::{BytesMut};
+use tokio_core::reactor::Handle;
 use tokio_io::{AsyncRead, AsyncWrite};
 use tokio_io::codec::{Encoder, Decoder, Framed};
 use tokio_proto::pipeline::{ServerProto, ClientProto, ClientService};
 use tokio_service::{Service, NewService};
+use std::net::SocketAddr;
+use futures::{future, Future};
 
 const LENGTH_LEN: usize = 4;
 
 pub struct MessageCodec;
 
+#[derive(Debug)]
 pub struct MessageFrame {
     pub message: proto::Msg,
     pub length: u32
@@ -48,7 +54,7 @@ impl Decoder for MessageCodec {
             Ok(None)
         }
         else {
-            let msg = (&buf[0..3]).read_u32::<BigEndian>();
+            let msg = (&buf[0..4]).read_u32::<BigEndian>();
             match msg {
                 Ok(cl) => {
                     let content_length = cl as usize;
@@ -69,7 +75,7 @@ impl Decoder for MessageCodec {
                     }
                 },
                 Err(_) => Err(io::Error::new(io::ErrorKind::Other,
-                                             "Error proto msg size")),
+                                             "Error proto msg size"))
             }
         }
     }
@@ -89,5 +95,33 @@ impl<T: AsyncRead + AsyncWrite + 'static> ClientProto<T> for RiemannProto {
 
     fn bind_transport(&self, io: T) -> Self::BindTransport {
         Ok(io.framed(MessageCodec))
+    }
+}
+
+pub struct Client {
+    inner: ClientService<TcpStream, RiemannProto>,
+}
+
+impl Client {
+    /// Establish a connection to a line-based server at the provided `addr`.
+    pub fn connect(addr: &SocketAddr, handle: &Handle) -> Box<Future<Item = Client, Error = io::Error>> {
+        let ret = TcpClient::new(RiemannProto)
+            .connect(addr, handle)
+            .map(|client_service| {
+                Client { inner: client_service }
+            });
+        Box::new(ret)
+    }
+}
+
+impl Service for Client {
+    type Request = MessageFrame;
+    type Response = MessageFrame;
+    type Error = io::Error;
+    // For simplicity, box the future.
+    type Future = Box<Future<Item = MessageFrame, Error = io::Error>>;
+
+    fn call(&self, req: MessageFrame) -> Self::Future {
+        Box::new(self.inner.call(req))
     }
 }
