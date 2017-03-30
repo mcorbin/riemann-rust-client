@@ -11,7 +11,14 @@ pub mod client;
 pub mod codec;
 pub mod event;
 pub mod tcp;
+pub mod udp;
 
+use std::net::SocketAddr;
+use byteorder::WriteBytesExt;
+use byteorder::BigEndian;
+use bytes::{BytesMut, BufMut};
+use futures::{Stream, Sink};
+use tokio_core::net::{UdpSocket, UdpCodec};
 use futures::Future;
 use tokio_core::reactor::Core;
 use tokio_service::Service;
@@ -49,19 +56,52 @@ fn main() {
     };
 
     let handle = core.handle();
-    let addr = "127.0.0.1:5555".parse().unwrap();
-    let _ = core.run(
-        tcp::TcpClient::connect(&addr, &handle)
-            .and_then(|client| {
-                client.call(frame)
-                    .and_then(move |response| {
-                        println!("CLIENT: {:?}", response);
-                        client.call(frame2)
-                    })
-                    .and_then(|response| {
-                        println!("CLIENT: {:?}", response);
-                        Ok(())
-                    })
-            })
-    );
+//    let addr = "127.0.0.1:5555".parse().unwrap();
+    
+    // let client = core.run(tcp::TcpClient::connect(&addr, &handle));
+    
+    // match client {
+    //     Ok(c) => {
+    //         let response = core.run(c.call(frame));
+    //         match response {
+    //             Ok(resp) => {
+    //                 println!("=> {:?}", resp);
+    //                 ()
+    //             },
+    //             Err(e) => ()
+    //         }
+    //     }
+    //     Err(e) => ()
+    // }
+    let addr2: SocketAddr = "127.0.0.1:0".parse().unwrap();
+
+    let a = UdpSocket::bind(&addr2, &handle).unwrap();
+
+    let addr3: SocketAddr = "127.0.0.1:5555".parse().unwrap();
+    let (a_sink, a_stream) = a.framed(client::MessageCodec).split();
+    println!("send ?");
+    let a = a_sink.send((addr3, frame));
+    core.run(a);
+    // let _ = core.run(
+    //     let fclient = tcp::TcpClient::connect(&addr, &handle);
+    //     Ok(())
+    //         // .and_then(|client| {
+                
+    //         //     for x in 0..10 {
+    //         //         println!("{}", x); // x: i32
+    //         //         client.call(frame);
+    //         //         ()
+    //         //     }
+    //         // }
+    //             // client.call(frame)
+    //             //     .and_then(move |response| {
+    //             //         println!("CLIENT: {:?}", response);
+    //             //         client.call(frame2)
+    //             //     })
+    //             //     .and_then(|response| {
+    //             //         println!("CLIENT: {:?}", response);
+    //             //         Ok(())
+    //             //     })
+            
+    //         )
 }

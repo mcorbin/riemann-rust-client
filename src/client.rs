@@ -8,6 +8,8 @@ use byteorder::BigEndian;
 use protobuf;
 use bytes::{BytesMut};
 use tokio_io::{AsyncRead, AsyncWrite};
+use tokio_core::net::{UdpCodec};
+use std::net::SocketAddr;
 use tokio_io::codec::{Encoder, Decoder, Framed};
 use tokio_proto::pipeline::{ClientProto};
 
@@ -26,6 +28,45 @@ pub struct MessageCodec;
 pub struct MessageFrame {
     pub message: proto::Msg,
     pub length: u32
+}
+
+impl UdpCodec for MessageCodec {
+    type In = (SocketAddr, MessageFrame);
+    type Out = (SocketAddr, MessageFrame);
+
+    fn encode(&mut self, (addr, msg): Self::Out, into: &mut Vec<u8>) -> SocketAddr {
+        println!("will be encoded");
+        let mut len_writer = vec![];
+        len_writer.write_u32::<BigEndian>(msg.length);
+        into.extend(len_writer);
+        // contains content
+        let mut content_writer = vec![];
+        let _ = msg.message.write_to_vec(&mut content_writer);
+        into.extend(content_writer);
+        println!("encoded");
+        addr
+    }
+
+    fn decode(&mut self, addr: &SocketAddr, buf: &[u8]) -> io::Result<Self::In> {
+        println!("will be decoded");
+        let msg = (&buf[0..4]).read_u32::<BigEndian>();
+        match msg {
+            Ok(cl) => {
+                let content_length = cl as usize;
+                let total_len = LENGTH_LEN + content_length;
+                let message = protobuf::parse_from_bytes::<proto::Msg>(&buf[LENGTH_LEN..total_len]);
+                match message {
+                    Ok(msg) => (Ok((*addr, MessageFrame {
+                        message: msg,
+                        length: cl}))),
+                    Err(_) => Err(io::Error::new(io::ErrorKind::Other,
+                                                 "Error proto msg content"))
+                }
+            },
+            Err(_) => Err(io::Error::new(io::ErrorKind::Other,
+                                         "Error proto msg decoding"))
+        }
+    }
 }
 
 impl Encoder for MessageCodec {
