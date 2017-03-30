@@ -125,7 +125,6 @@ impl<T: AsyncRead + AsyncWrite + 'static> ClientProto<T> for RiemannProto {
     type Request = MessageFrame;
     type Response = MessageFrame;
 
-    /// `Framed<T, LineCodec>` is the return value of `io.framed(LineCodec)`
     type Transport = Framed<T, MessageCodec>;
     type BindTransport = Result<Self::Transport, io::Error>;
 

@@ -81,6 +81,7 @@ fn main() {
     let (a_sink, a_stream) = a.framed(client::MessageCodec).split();
     let a = a_sink.send((addr3, frame));
     core.run(a);
+
     // let _ = core.run(
     //     let fclient = tcp::TcpClient::connect(&addr, &handle);
     //     Ok(())
