@@ -79,7 +79,6 @@ fn main() {
 
     let addr3: SocketAddr = "127.0.0.1:5555".parse().unwrap();
     let (a_sink, a_stream) = a.framed(client::MessageCodec).split();
-    println!("send ?");
     let a = a_sink.send((addr3, frame));
     core.run(a);
     // let _ = core.run(

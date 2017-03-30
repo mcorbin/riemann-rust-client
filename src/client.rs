@@ -35,20 +35,13 @@ impl UdpCodec for MessageCodec {
     type Out = (SocketAddr, MessageFrame);
 
     fn encode(&mut self, (addr, msg): Self::Out, into: &mut Vec<u8>) -> SocketAddr {
-        println!("will be encoded");
-        let mut len_writer = vec![];
-        len_writer.write_u32::<BigEndian>(msg.length);
-        into.extend(len_writer);
-        // contains content
         let mut content_writer = vec![];
         let _ = msg.message.write_to_vec(&mut content_writer);
         into.extend(content_writer);
-        println!("encoded");
         addr
     }
 
     fn decode(&mut self, addr: &SocketAddr, buf: &[u8]) -> io::Result<Self::In> {
-        println!("will be decoded");
         let msg = (&buf[0..4]).read_u32::<BigEndian>();
         match msg {
             Ok(cl) => {
