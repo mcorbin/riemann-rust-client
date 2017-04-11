@@ -13,13 +13,6 @@ use std::net::SocketAddr;
 use tokio_io::codec::{Encoder, Decoder, Framed};
 use tokio_proto::pipeline::{ClientProto};
 
-trait Client {
-    fn send_event(&self, event: event::Event) -> Option<event::Message>;
-    fn send_events(&self, events: &Vec<event::Event>) -> Option<event::Message>;
-    fn query(&self, query: &event::Query) -> Option<event::Message>;
-}
-
-
 const LENGTH_LEN: usize = 4;
 
 pub struct MessageCodec;
@@ -30,6 +23,7 @@ pub struct MessageFrame {
     pub length: u32
 }
 
+/******** UDP *********/
 impl UdpCodec for MessageCodec {
     type In = (SocketAddr, MessageFrame);
     type Out = (SocketAddr, MessageFrame);
@@ -62,6 +56,7 @@ impl UdpCodec for MessageCodec {
     }
 }
 
+/******** Codec *********/
 impl Encoder for MessageCodec {
     type Item = MessageFrame;
     type Error = io::Error;
@@ -117,8 +112,7 @@ impl Decoder for MessageCodec {
     }
 }
 
-// proto
-
+/******** Proto *********/
 pub struct RiemannProto;
 
 impl<T: AsyncRead + AsyncWrite + 'static> ClientProto<T> for RiemannProto {
