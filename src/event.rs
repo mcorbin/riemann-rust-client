@@ -24,18 +24,9 @@ pub struct Event {
     pub ttl: Option<f32>,
     pub attributes: Option<HashMap<String, String>>,
     pub metric: Option<Metric>
-
 }
 
 pub type Query = String;
-
-#[derive(Debug)]
-pub struct Message {
-    pub ok: Option<bool>,
-    pub error: Option<String>,
-    pub query: Query,
-    pub events: Vec<Event>
-}
 
 impl Event {
     pub fn new() -> Event {

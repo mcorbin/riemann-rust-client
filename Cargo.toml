@@ -12,3 +12,9 @@ tokio-core = "0.1"
 tokio-proto = "0.1"
 tokio-service = "0.1"
 byteorder = "1"
+
+[lib]
+name = "riemann_rust"
+
+[[bin]]
+name = "rustmann"

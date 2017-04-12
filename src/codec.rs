@@ -3,6 +3,20 @@ use std::collections::HashMap;
 use protobuf::{RepeatedField};
 use event;
 
+/// Takes a proto Msg, returns these events.
+///
+/// # Example
+///
+/// ```
+/// let e = event::Event {
+///         ...
+///         };
+/// let result = events_to_message(&vec![e]);
+/// ```
+pub fn get_events(message: &proto::Msg) -> Vec<event::Event> {
+    message.get_events().to_vec().iter().map(|e| proto_to_event(e)).collect()
+}
+
 /// Creates a proto Msg containing the events received in parameter
 ///
 /// # Example
@@ -115,7 +129,6 @@ pub fn proto_to_event(proto_event: &proto::Event) -> event::Event {
     if proto_event.has_ttl() {
         e.ttl = Some(proto_event.get_ttl());
     }
-
     // metric priority
     if proto_event.has_metric_sint64() {
         e.metric = Some(event::Metric::Int64(proto_event.get_metric_sint64()));
@@ -313,4 +326,14 @@ fn events_to_message_test() {
 
     let result = events_to_message(&vec![event::Event::new(), event::Event::new()]);
     assert_eq!(result.get_events().len(), 2);
+}
+
+#[test]
+fn get_events_test() {
+    let mut msg = proto::Msg::new();
+    let e1 = proto::Event::new();
+    let e2 = proto::Event::new();
+    msg.set_events(RepeatedField::from_vec(vec![e1, e2]));
+    let result = get_events(&msg);
+    assert_eq!(result.len(), 2);
 }
