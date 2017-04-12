@@ -3,6 +3,23 @@ use std::collections::HashMap;
 use protobuf::{RepeatedField};
 use event;
 
+/// Creates a proto Msg containing the events received in parameter
+///
+/// # Example
+///
+/// ```
+/// let e = event::Event {
+///         ...
+///         };
+/// let result = events_to_message(&vec![e]);
+/// ```
+pub fn events_to_message(events: &Vec<event::Event>) -> proto::Msg {
+    let mut msg = proto::Msg::new();
+    let proto_events = events.iter().map(|e| event_to_proto(e)).collect();
+    msg.set_events(RepeatedField::from_vec(proto_events));
+    msg
+}
+
 /// Converts a event::Event to a proto::Event
 ///
 /// # Example
@@ -285,3 +302,15 @@ mod tests {
     }
 }
 
+#[test]
+fn events_to_message_test() {
+    let mut e = event::Event::new();
+    e.metric = Some(event::Metric::Double(10.1));
+    let events = vec![e];
+    let result = events_to_message(&events);
+    assert_eq!(result.get_events().len(), 1);
+    assert_eq!(result.get_events()[0].get_metric_d(), 10.1);
+
+    let result = events_to_message(&vec![event::Event::new(), event::Event::new()]);
+    assert_eq!(result.get_events().len(), 2);
+}
