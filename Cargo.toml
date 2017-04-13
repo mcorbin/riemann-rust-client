@@ -12,6 +12,7 @@ tokio-core = "0.1"
 tokio-proto = "0.1"
 tokio-service = "0.1"
 byteorder = "1"
+clap = {version = "2.19", features =[ "yaml"]}
 
 [lib]
 name = "riemann_rust"

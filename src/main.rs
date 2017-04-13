@@ -1,81 +1,50 @@
-extern crate byteorder;
-extern crate bytes;
-extern crate protobuf;
-extern crate futures;
-extern crate tokio_core;
-extern crate tokio_proto;
+#[macro_use]
+extern crate clap;
+extern crate riemann_rust;
 extern crate tokio_service;
-extern crate tokio_io;
-pub mod proto;
-pub mod client;
-pub mod codec;
-pub mod event;
-pub mod tcp;
-pub mod udp;
-
-use std::net::SocketAddr;
-use byteorder::WriteBytesExt;
-use byteorder::BigEndian;
-use bytes::{BytesMut, BufMut};
-use futures::{Stream, Sink};
-use tokio_core::net::{UdpSocket, UdpCodec};
-use futures::Future;
-use tokio_core::reactor::Core;
+extern crate tokio_core;
+pub mod cli;
+pub mod util;
+use clap::App;
 use tokio_service::Service;
-use protobuf::{RepeatedField, Message};
+use tokio_core::reactor::Core;
 
 fn main() {
-    let mut core = Core::new().unwrap();
+    let yaml = load_yaml!("cli.yaml");
+    let matches = App::from_yaml(yaml).get_matches();
+    if let Some(matches) = matches.subcommand_matches("send") {
+        let protocol = matches.value_of("protocol").unwrap();
+        let riemann_server = matches.value_of("server").unwrap_or("127.0.0.1");
+        let port = matches.value_of("port").unwrap_or("5555");
 
-    let mut e = proto::proto::Event::new();
-    e.set_state("critical".to_owned());
-    e.set_service("rust".to_owned());
-    e.set_host("bar".to_owned());
-
-    let mut msg = proto::proto::Msg::new();
-    msg.set_events(RepeatedField::from_vec(vec![e]));
-
-    let size = msg.compute_size();
-    let frame = client::MessageFrame {
-        message: msg,
-        length: size
-    };
-
-    
-    let handle = core.handle();
-    let addr = "127.0.0.1:5555".parse().unwrap();
-
-    let client = core.run(tcp::TcpClient::connect(&addr, &handle));
-
-    match client {
-        Ok(c) => {
-            for x in 0..100000 {
-                let mut msg2 = proto::proto::Msg::new();
-                
-                let mut e2 = proto::proto::Event::new();
-                e2.set_state("critical".to_owned());
-                e2.set_service("rust222".to_owned());
-                e2.set_host("bar".to_owned());
-                e2.set_metric_sint64(x);
-
-                msg2.set_events(RepeatedField::from_vec(vec![e2]));
-                let size2 = msg2.compute_size();
-
-                let frame2 = client::MessageFrame {
-                    message: msg2,
-                    length: size2
-                };
-                let response = core.run(c.call(frame2)).unwrap();
+        let event = cli::get_event(&matches).unwrap();
+        let addr = format!("{}:{}", riemann_server, port).parse().unwrap();
+        let mut core = Core::new().unwrap();
+        let handle = core.handle();
+        let _ = match protocol {
+            "tcp" => {
+                let c = core.run(riemann_rust::tcp::TcpClient::connect(&addr, &handle));
+                match c {
+                    Ok(client) => {
+                        let result = core.run(client.call(riemann_rust::codec::get_frame(event)));
+                        match result {
+                            Ok(r) => println!("result : {:?}", r),
+                            Err(error) => {
+                                println!("error during send : {}", error)
+                            }
+                        }
+                    },
+                    Err(err) => {
+                        println!("Error during send : {}", err);
+                        std::process::exit(2);
+                    }
+                }
+            },
+            _ => {
+                println!("Unknown protocol : {}", protocol);
+                std::process::exit(1);
             }
-        }
-        Err(e) => ()
+        };
+        
     }
-    // let addr2: SocketAddr = "127.0.0.1:0".parse().unwrap();
-
-    // let a = UdpSocket::bind(&addr2, &handle).unwrap();
-
-    // let addr3: SocketAddr = "127.0.0.1:5555".parse().unwrap();
-    // let (a_sink, a_stream) = a.framed(client::MessageCodec).split();
-    // let a = a_sink.send((addr3, frame));
-    // core.run(a);
 }
