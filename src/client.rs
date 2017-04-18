@@ -1,4 +1,3 @@
-use event;
 use proto::proto;
 use std::io;
 use byteorder::ReadBytesExt;

@@ -11,4 +11,3 @@ pub mod client;
 pub mod codec;
 pub mod event;
 pub mod tcp;
-pub mod udp;
