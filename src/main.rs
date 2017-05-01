@@ -4,14 +4,41 @@ extern crate riemann_rust;
 extern crate futures;
 extern crate tokio_service;
 extern crate tokio_core;
+extern crate rustls;
+extern crate tokio_rustls;
+
 pub mod cli;
 pub mod util;
+pub mod tls;
 use std::net::SocketAddr;
 use clap::App;
 use tokio_service::Service;
 use tokio_core::reactor::Core;
 use tokio_core::net::UdpSocket;
-use futures::{Stream, Sink};
+use futures::{Stream, Sink, Future};
+use tokio_rustls::ClientConfigExt;
+use tokio_core::net::TcpStream;
+
+fn send_tls(event: riemann_rust::event::Event, addr: &SocketAddr) {
+    let mut core = Core::new().unwrap();
+    let handle = core.handle();
+    let c = core.run(riemann_rust::tcp::TcpClient::connect(&addr, &handle));
+    match c {
+        Ok(client) => {
+            let config = tls::get_config("/home/mathieu/prog/go/ssl/client.key",
+                                         "/home/mathieu/prog/go/ssl/client.pem",
+                                         "/home/mathieu/prog/go/ssl/ca.pem");
+            c.and_then(|socket| config.connect_async("localhost", socket));
+            
+	        
+
+        },
+        Err(err) => {
+            println!("Error during send : {}", err);
+            std::process::exit(2);
+        }
+    }
+}
 
 fn send_tcp(event: riemann_rust::event::Event, addr: &SocketAddr) {
     let mut core = Core::new().unwrap();
