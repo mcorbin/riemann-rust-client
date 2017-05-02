@@ -6,6 +6,8 @@ extern crate tokio_core;
 extern crate tokio_proto;
 extern crate tokio_service;
 extern crate tokio_io;
+extern crate native_tls;
+extern crate tokio_tls;
 pub mod proto;
 pub mod client;
 pub mod codec;

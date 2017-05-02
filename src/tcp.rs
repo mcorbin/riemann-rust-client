@@ -1,8 +1,13 @@
+
+use tokio_tls;
+use futures::future::ok;
+use native_tls::TlsConnector;
 use std::io;
 use tokio_core::net::TcpStream;
 use tokio_proto;
 use tokio_core::reactor::{Handle};
 use tokio_proto::pipeline::{ClientService};
+use tokio_proto::BindClient;
 use tokio_service::{Service};
 use std::net::SocketAddr;
 use futures::{Future};
@@ -24,6 +29,7 @@ impl TcpClient {
             });
         Box::new(ret)
     }
+
 }
 
 impl Service for TcpClient {

@@ -12,9 +12,9 @@ tokio-core = "0.1"
 tokio-proto = "0.1"
 tokio-service = "0.1"
 byteorder = "1"
-rustls = "0.5.8"
 clap = {version = "2.19", features =[ "yaml"]}
-tokio-rustls = "0.1.7"
+native-tls = "0.1"
+tokio-tls = { version = "0.1", features = ["tokio-proto"] }
 
 [lib]
 name = "riemann_rust"
