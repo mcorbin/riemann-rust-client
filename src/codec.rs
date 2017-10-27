@@ -1,6 +1,6 @@
 use proto::proto;
 use std::collections::HashMap;
-use protobuf::{RepeatedField, Message};
+use protobuf::{RepeatedField};
 use event;
 
 /// Takes a proto Msg, returns these events.

@@ -9,7 +9,8 @@ clap = {version = "2.19", features =[ "yaml"]}
 native-tls = "0.1"
 
 [lib]
-name = "riemann_rust"
+name = "rustmann"
+path = "src/lib.rs"
 
-#[[bin]]
-#name = "rustmann"
+[[bin]]
+name = "rustmann"

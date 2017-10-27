@@ -1,6 +1,6 @@
 #[macro_use]
 extern crate clap;
-extern crate riemann_rust;
+extern crate rustmann;
 pub mod cli;
 use clap::App;
 use std::net::SocketAddr;
