@@ -1,16 +1,5 @@
-extern crate byteorder;
-extern crate bytes;
 extern crate protobuf;
-extern crate futures;
-extern crate tokio_core;
-extern crate tokio_proto;
-extern crate tokio_service;
-extern crate tokio_io;
-extern crate native_tls;
-extern crate tokio_tls;
 pub mod proto;
-pub mod client;
 pub mod codec;
 pub mod event;
-pub mod tcp;
-pub mod tls;
+pub mod util;

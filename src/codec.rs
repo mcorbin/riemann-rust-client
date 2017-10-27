@@ -2,16 +2,6 @@ use proto::proto;
 use std::collections::HashMap;
 use protobuf::{RepeatedField, Message};
 use event;
-use client;
-
-pub fn get_frame(event: event::Event) -> client::MessageFrame {
-    let msg = events_to_message(&vec![event]);
-    let size = msg.compute_size();
-    client::MessageFrame {
-        message: msg,
-        length: size
-    }
-}
 
 /// Takes a proto Msg, returns these events.
 ///

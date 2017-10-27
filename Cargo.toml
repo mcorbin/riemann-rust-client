@@ -5,19 +5,11 @@ authors = ["mcorbin <corbin.math@gmail.com>"]
 
 [dependencies]
 protobuf = "1.2.2"
-bytes = "0.4"
-futures = "0.1"
-tokio-io = "0.1"
-tokio-core = "0.1"
-tokio-proto = "0.1"
-tokio-service = "0.1"
-byteorder = "1"
 clap = {version = "2.19", features =[ "yaml"]}
 native-tls = "0.1"
-tokio-tls = { version = "0.1", features = ["tokio-proto"] }
 
 [lib]
 name = "riemann_rust"
 
-[[bin]]
-name = "rustmann"
+#[[bin]]
+#name = "rustmann"

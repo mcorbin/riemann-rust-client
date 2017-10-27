@@ -1,10 +1,10 @@
+
 use clap;
-use util;
-use riemann_rust::event::{Metric, Time};
-use riemann_rust;
+use riemann_rust::util;
+use riemann_rust::event::{Metric, Time, Event};
 use std::collections::HashMap;
 
-pub fn get_event(matches: &clap::ArgMatches) -> Result<riemann_rust::event::Event, util::ParseError> {
+pub fn get_event(matches: &clap::ArgMatches) -> Result<Event, util::ParseError> {
 
     let host = matches.value_of("host").and_then(|s| Some(s.to_owned()));
     let service = matches.value_of("service").and_then(|s| Some(s.to_owned()));
@@ -38,7 +38,7 @@ pub fn get_event(matches: &clap::ArgMatches) -> Result<riemann_rust::event::Even
         }
     };
 
-    Ok(riemann_rust::event::Event {
+    Ok(Event {
         time: time,
         state: state,
         service: service,
