@@ -4,9 +4,9 @@ version = "0.1.0"
 authors = ["mcorbin <corbin.math@gmail.com>"]
 
 [dependencies]
-protobuf = "1.2.2"
-clap = {version = "2.19", features =[ "yaml"]}
-native-tls = "0.1"
+protobuf = "1.4.2"
+clap = {version = "2.27.1", features =[ "yaml"]}
+chrono = "0.4"
 
 [lib]
 name = "rustmann"
