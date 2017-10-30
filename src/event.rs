@@ -1,4 +1,5 @@
 use std::collections::HashMap;
+use chrono::{DateTime, Utc};
 
 #[derive(Debug)]
 pub enum Metric {
@@ -7,22 +8,27 @@ pub enum Metric {
     Float(f32)
 }
 
-#[derive(Debug, PartialEq, Eq)]
-pub enum Time {
-    Seconds(i64),
-    Micros(i64)
-}
+type State = String;
+type Service = String;
+type Host = String;
+type Description = String;
+type Tag = String;
+type Tags = Vec<Tag>;
+type Ttl = f32;
+type AttrKey = String;
+type AttrValue = String;
+type Attributes = HashMap<AttrKey, AttrValue>;
 
 #[derive(Debug)]
 pub struct Event {
-    pub time: Option<Time>,
-    pub state: Option<String>,
-    pub service: Option<String>,
-    pub host: Option<String>,
-    pub description: Option<String>,
-    pub tags: Option<Vec<String>>,
-    pub ttl: Option<f32>,
-    pub attributes: Option<HashMap<String, String>>,
+    pub time: Option<DateTime<Utc>>,
+    pub state: Option<State>,
+    pub service: Option<Service>,
+    pub host: Option<Host>,
+    pub description: Option<Description>,
+    pub tags: Option<Tags>,
+    pub ttl: Option<Ttl>,
+    pub attributes: Option<Attributes>,
     pub metric: Option<Metric>
 }
 

@@ -1,6 +1,8 @@
 use proto::proto;
 use std::collections::HashMap;
 use protobuf::{RepeatedField};
+use chrono::{Utc};
+use chrono::TimeZone;
 use event;
 
 /// Takes a proto Msg, returns these events.
@@ -47,16 +49,12 @@ pub fn events_to_message(events: &Vec<event::Event>) -> proto::Msg {
 pub fn event_to_proto(event: &event::Event) -> proto::Event {
     let mut e = proto::Event::new();
     if let Some(ref time) = event.time {
-        match *time {
-            event::Time::Seconds(s) => {
-                e.set_time(s);
-                e.set_time_micros(s * 1000000);
-            }
-            event::Time::Micros(s) =>  {
-                e.set_time_micros(s);
-                e.set_time(s/1000000) // compatibility with old Riemann server
-            }
-        }
+        let seconds = time.timestamp();
+        let microseconds = time.timestamp_subsec_micros() as i64;
+        let microseconds_ts = (seconds * 1_000_000) + microseconds;
+
+        e.set_time(seconds);
+        e.set_time_micros(microseconds_ts);
     }
     if let Some(ref state) = event.state {
         e.set_state(state.to_owned())
@@ -108,10 +106,17 @@ pub fn proto_to_event(proto_event: &proto::Event) -> event::Event {
 
     // time_micros priority
     if proto_event.has_time_micros() {
-        e.time = Some(event::Time::Micros(proto_event.get_time_micros()));
+        let microseconds_ts = proto_event.get_time_micros();
+        let seconds = microseconds_ts/1_000_000;
+        let nanoseconds = (microseconds_ts*1000) - (seconds*1_000_000);
+        let dt = Utc.timestamp(seconds, nanoseconds as u32);
+        e.time = Some(dt);
     }
     else if proto_event.has_time() {
-        e.time = Some(event::Time::Seconds(proto_event.get_time()));
+        let microseconds_ts = proto_event.get_time_micros();
+        let seconds = microseconds_ts/1_000_000;
+        let dt = Utc.timestamp(seconds, 0);
+        e.time = Some(dt);
     }
 
     if proto_event.has_state() {
