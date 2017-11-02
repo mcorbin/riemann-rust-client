@@ -102,10 +102,6 @@ pub fn proto_to_event(proto_event: &proto::Event) -> event::Event {
         let microseconds_ts = proto_event.get_time_micros();
         let seconds = microseconds_ts/1_000_000;
         let nanoseconds = (microseconds_ts*1000) - (seconds*1_000_000_000);
-        println!("nanoseconds, {}", nanoseconds);
-        println!("sec, {}", seconds);
-        println!("r1, {}", (microseconds_ts*1000));
-        println!("r2, {}", (seconds*1_000_000));
         let dt = Utc.timestamp(seconds, nanoseconds as u32);
         e.time = Some(dt);
     }
@@ -174,7 +170,7 @@ mod tests {
     fn proto_to_event_test() {
         let mut e = proto::Event::new();
         e.set_time(1);
-        e.set_time_micros(1000000);
+        e.set_time_micros(1000001);
         e.set_state("critical".to_owned());
         e.set_service("foo".to_owned());
         e.set_host("bar".to_owned());
@@ -193,7 +189,7 @@ mod tests {
         let mut attr = HashMap::new();
         attr.insert("k1".to_owned(), "v1".to_owned());
 
-        assert_eq!(result.time, Some(Utc.timestamp(1, 0)));
+        assert_eq!(result.time, Some(Utc.timestamp(1, 1000)));
         assert_eq!(result.state, Some("critical".to_owned()));
         assert_eq!(result.service, Some("foo".to_owned()));
         assert_eq!(result.host, Some("bar".to_owned()));
@@ -239,7 +235,7 @@ mod tests {
         let mut attr = HashMap::new();
         attr.insert("foo".to_owned(), "bar".to_owned());
         let e = event::Event {
-            time: Some(Utc.timestamp(1, 0)),
+            time: Some(Utc.timestamp(1, 1000)),
             state: Some("critical".to_owned()),
             service: Some("foo".to_owned()),
             host: Some("bar".to_owned()),
@@ -252,7 +248,7 @@ mod tests {
 
         let result = event_to_proto(&e);
         assert_eq!(result.get_time(), 1);
-        assert_eq!(result.get_time_micros(), 1000000);
+        assert_eq!(result.get_time_micros(), 1000001);
         assert_eq!(result.get_state(), "critical");
         assert_eq!(result.get_service(), "foo");
         assert_eq!(result.get_host(), "bar");
