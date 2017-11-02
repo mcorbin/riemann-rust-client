@@ -9,7 +9,6 @@ use event;
 ///
 /// # Example
 ///
-/// ```
 /// let e = event::Event {
 ///         ...
 ///         };
@@ -23,12 +22,10 @@ pub fn get_events(message: &proto::Msg) -> Vec<event::Event> {
 ///
 /// # Example
 ///
-/// ```
 /// let e = event::Event {
 ///         ...
 ///         };
 /// let result = events_to_message(&vec![e]);
-/// ```
 pub fn events_to_message(events: &Vec<event::Event>) -> proto::Msg {
     let mut msg = proto::Msg::new();
     let proto_events = events.iter().map(|e| event_to_proto(e)).collect();
@@ -40,12 +37,10 @@ pub fn events_to_message(events: &Vec<event::Event>) -> proto::Msg {
 ///
 /// # Example
 ///
-/// ```
 /// let e = event::Event {
 ///         ...
 ///         };
 /// let result = event_to_proto(&e);
-/// ```
 pub fn event_to_proto(event: &event::Event) -> proto::Event {
     let mut e = proto::Event::new();
     if let Some(ref time) = event.time {
@@ -97,10 +92,8 @@ pub fn event_to_proto(event: &event::Event) -> proto::Event {
 ///
 /// # Example
 ///
-/// ```
 /// let mut e = proto::Event::new();
 /// let result = proto_to_event(&e);
-/// ```
 pub fn proto_to_event(proto_event: &proto::Event) -> event::Event {
     let mut e = event::Event::new();
 
@@ -108,13 +101,16 @@ pub fn proto_to_event(proto_event: &proto::Event) -> event::Event {
     if proto_event.has_time_micros() {
         let microseconds_ts = proto_event.get_time_micros();
         let seconds = microseconds_ts/1_000_000;
-        let nanoseconds = (microseconds_ts*1000) - (seconds*1_000_000);
+        let nanoseconds = (microseconds_ts*1000) - (seconds*1_000_000_000);
+        println!("nanoseconds, {}", nanoseconds);
+        println!("sec, {}", seconds);
+        println!("r1, {}", (microseconds_ts*1000));
+        println!("r2, {}", (seconds*1_000_000));
         let dt = Utc.timestamp(seconds, nanoseconds as u32);
         e.time = Some(dt);
     }
     else if proto_event.has_time() {
-        let microseconds_ts = proto_event.get_time_micros();
-        let seconds = microseconds_ts/1_000_000;
+        let seconds = proto_event.get_time();
         let dt = Utc.timestamp(seconds, 0);
         e.time = Some(dt);
     }
@@ -170,6 +166,8 @@ mod tests {
     use std::collections::HashMap;
     use protobuf::{RepeatedField};
     use proto::proto;
+    use chrono::{Utc};
+    use chrono::TimeZone;
     use event;
 
     #[test]
@@ -195,7 +193,7 @@ mod tests {
         let mut attr = HashMap::new();
         attr.insert("k1".to_owned(), "v1".to_owned());
 
-        assert_eq!(result.time, Some(event::Time::Micros(1000000)));
+        assert_eq!(result.time, Some(Utc.timestamp(1, 0)));
         assert_eq!(result.state, Some("critical".to_owned()));
         assert_eq!(result.service, Some("foo".to_owned()));
         assert_eq!(result.host, Some("bar".to_owned()));
@@ -217,7 +215,7 @@ mod tests {
 
         let result = proto_to_event(&e);
 
-        assert_eq!(result.time, Some(event::Time::Seconds(10)));
+        assert_eq!(result.time, Some(Utc.timestamp(10, 0)));
         match result.metric {
             Some(event::Metric::Double(v)) => assert_eq!(v, 10.1),
             _ => panic!("error in test")
@@ -229,7 +227,7 @@ mod tests {
 
         let result = proto_to_event(&e);
 
-        assert_eq!(result.time, Some(event::Time::Seconds(10)));
+        assert_eq!(result.time, Some(Utc.timestamp(10, 0)));
         match result.metric {
             Some(event::Metric::Float(v)) => assert_eq!(v, 10.2),
             _ => panic!("error in test")
@@ -241,7 +239,7 @@ mod tests {
         let mut attr = HashMap::new();
         attr.insert("foo".to_owned(), "bar".to_owned());
         let e = event::Event {
-            time: Some(event::Time::Seconds(1)),
+            time: Some(Utc.timestamp(1, 0)),
             state: Some("critical".to_owned()),
             service: Some("foo".to_owned()),
             host: Some("bar".to_owned()),
@@ -286,13 +284,13 @@ mod tests {
         assert_eq!(result.get_attributes().len(), 0);
 
         let mut e = event::Event::new();
-        e.time = Some(event::Time::Micros(10));
+        e.time = Some(Utc.timestamp(0, 10000));
         let result = event_to_proto(&e);
         assert_eq!(result.get_time(), 0);
         assert_eq!(result.get_time_micros(), 10);
 
         let mut e = event::Event::new();
-        e.time = Some(event::Time::Seconds(10));
+        e.time = Some(Utc.timestamp(10, 0));
         let result = event_to_proto(&e);
         assert_eq!(result.get_time(), 10);
         assert_eq!(result.get_time_micros(), 10000000);
