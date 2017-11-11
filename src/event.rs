@@ -1,4 +1,6 @@
 use std::collections::HashMap;
+use std::error::Error;
+use std::fmt;
 use chrono::{DateTime, Utc};
 
 #[derive(Debug)]
@@ -47,5 +49,22 @@ impl Event {
             attributes: None,
             metric: None
         }
+    }
+}
+
+#[derive(Debug)]
+pub struct MsgError {
+    pub message: String
+}
+
+impl Error for MsgError {
+    fn description(&self) -> &str {
+        "Error sending events to Riemann"
+    }
+}
+
+impl fmt::Display for MsgError {
+    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+        write!(f, "Error sending events to Riemann : {}", self.message)
     }
 }

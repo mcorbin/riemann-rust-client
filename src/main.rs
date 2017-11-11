@@ -6,8 +6,8 @@ use clap::App;
 use std::net::SocketAddr;
 
 fn main() {
-    let yaml = load_yaml!("cli.yaml");
-    let matches = App::from_yaml(yaml).get_matches();
+//    let yaml = load_yaml!("cli.yaml");
+//    let matches = App::from_yaml(yaml).get_matches();
     // if let Some(matches) = matches.subcommand_matches("send") {
     //     let protocol = matches.value_of("protocol").unwrap();
     //     let riemann_server = matches.value_of("server").unwrap_or("127.0.0.1");

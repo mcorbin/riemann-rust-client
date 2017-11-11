@@ -2,7 +2,7 @@
 use clap;
 use rustmann::util;
 //use rustmann::event::{Metric, Time, Event};
-use std::collections::HashMap;
+//use std::collections::HashMap;
 
 // pub fn get_event(matches: &clap::ArgMatches) -> Result<Event, util::ParseError> {
 
