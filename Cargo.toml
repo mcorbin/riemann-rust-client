@@ -7,6 +7,7 @@ authors = ["mcorbin <corbin.math@gmail.com>"]
 protobuf = "1.4.2"
 clap = {version = "2.27.1", features =[ "yaml"]}
 chrono = "0.4"
+native-tls = "0.1"
 
 [lib]
 name = "rustmann"

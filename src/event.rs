@@ -68,3 +68,20 @@ impl fmt::Display for MsgError {
         write!(f, "Error sending events to Riemann : {}", self.message)
     }
 }
+
+#[derive(Debug)]
+pub struct RiemannClientError {
+    pub message: String
+}
+
+impl Error for RiemannClientError {
+    fn description(&self) -> &str {
+        "Error with the Riemann client"
+    }
+}
+
+impl fmt::Display for RiemannClientError {
+    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+        write!(f, "Error with the Riemann client : {}", self.message)
+    }
+}

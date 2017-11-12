@@ -2,6 +2,7 @@ use event::{Event, MsgError};
 use std::time::Duration;
 use std::io;
 use protobuf::ProtobufError;
+use event::RiemannClientError;
 
 #[derive(Debug)]
 pub enum ConnectError {
@@ -12,7 +13,8 @@ pub enum ConnectError {
 pub enum SendError {
     ProtoError(ProtobufError),
     IOError(io::Error),
-    MsgError(MsgError)
+    MsgError(MsgError),
+    ClientError(RiemannClientError),
 }
 
 impl From<io::Error> for ConnectError {
@@ -36,6 +38,12 @@ impl From<io::Error> for SendError {
 impl From<MsgError> for SendError {
     fn from(err: MsgError) -> SendError {
         SendError::MsgError(err)
+    }
+}
+
+impl From<RiemannClientError> for SendError {
+    fn from(err: RiemannClientError) -> SendError {
+        SendError::ClientError(err)
     }
 }
 

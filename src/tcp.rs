@@ -1,5 +1,5 @@
 use std::io::prelude::*;
-use event::{ Event, MsgError };
+use event::{ Event, MsgError, RiemannClientError };
 use codec;
 use proto::proto;
 use std::net::TcpStream;
@@ -9,17 +9,15 @@ use client::{Client, ConnectError, SendError};
 
 #[derive(Debug)]
 pub struct TcpClient {
-    pub host: String,
-    pub port: i32,
+    pub addr: String,
     pub tcp_client: Option<TcpStream>
 
 }
 
 impl TcpClient {
-    pub fn new(host: &str, port: i32) -> TcpClient {
+    pub fn new(host: &str, port: u32) -> TcpClient {
         TcpClient {
-            host: host.to_owned(),
-            port: port,
+            addr: format!("{}:{}", host, port),
             tcp_client: None
         }
     }
@@ -27,8 +25,7 @@ impl TcpClient {
 
 impl Client for TcpClient {
     fn connect(&mut self, timeout: Duration) -> Result<(), ConnectError> {
-        let addr = format!("{}:{}", self.host, self.port);
-        let stream = TcpStream::connect(addr)?;
+        let stream = TcpStream::connect_timeout(&self.addr, timeout)?;
         stream.set_write_timeout(Some(timeout))?;
         stream.set_read_timeout(Some(timeout))?;
         self.tcp_client = Some(stream);
@@ -65,6 +62,7 @@ impl Client for TcpClient {
             if msg.has_ok() {
                 let ok = msg.get_ok();
                 if !ok {
+                    // the Msg is on error
                     let msg_error = MsgError { message: msg.get_error().to_owned() };
                     // TODO
                     return Err(SendError::MsgError(msg_error))
@@ -81,10 +79,9 @@ impl Client for TcpClient {
                 return Err(SendError::MsgError(msg_error))
             }
         }
-
-        let msg_error = MsgError {
+        let error = RiemannClientError {
             message: format!("Riemann Client not connected ?")
         };
-        Err(SendError::MsgError(msg_error))
+        Err(SendError::ClientError(error))
     }
 }

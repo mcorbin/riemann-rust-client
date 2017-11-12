@@ -2,8 +2,8 @@ use std::net::UdpSocket;
 use client::{Client, ConnectError, SendError};
 use std::time::Duration;
 use event::Event;
-use event::MsgError;
-use protobuf::{Message, parse_from_bytes};
+use event::{RiemannClientError};
+use protobuf::{Message};
 use codec;
 
 #[derive(Debug)]
@@ -28,7 +28,6 @@ impl UdpClient {
     }
 }
 
-
 impl Client for UdpClient {
 
     fn connect(&mut self, timeout: Duration) -> Result<(), ConnectError> {
@@ -44,16 +43,19 @@ impl Client for UdpClient {
             let msg = codec::events_to_message(events);
             let size = msg.compute_size();
             if size > MAX_UDP_SIZE {
-                // TODO error
+                let error = RiemannClientError {
+                    message: format!("Datagram size: {}, max size: {}", size, MAX_UDP_SIZE)
+                };
+                return Err(SendError::ClientError(error));
             }
             let bytes = msg.write_to_bytes()?;
             socket.send_to(&bytes, &self.addr)?;
             return Ok(());
         }
-        let msg_error = MsgError {
+        let error = RiemannClientError {
             message: format!("Riemann Client not connected ?")
         };
-        Err(SendError::MsgError(msg_error))
+        Err(SendError::ClientError(error))
     }
 
 }
