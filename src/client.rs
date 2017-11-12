@@ -40,10 +40,8 @@ impl From<MsgError> for SendError {
 }
 
 pub trait Client {
-    fn connect(&mut self, timeout: Duration) -> Result<bool, ConnectError>;
-    fn send(&mut self, event: &Event) -> Result<(), SendError>;
-    fn send_events(events: &Vec<Event>) -> Result<bool, bool>;
-    fn close() -> Result<bool, bool>;
+    fn connect(&mut self, timeout: Duration) -> Result<(), ConnectError>;
+    fn send(&mut self, events: &Vec<Event>) -> Result<(), SendError>;
 }
 
 pub trait IndexClient {

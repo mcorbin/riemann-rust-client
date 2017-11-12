@@ -11,7 +11,7 @@ use client::{Client, ConnectError, SendError};
 pub struct TcpClient {
     pub host: String,
     pub port: i32,
-    pub tcpClient: Option<TcpStream>
+    pub tcp_client: Option<TcpStream>
 
 }
 
@@ -20,42 +20,46 @@ impl TcpClient {
         TcpClient {
             host: host.to_owned(),
             port: port,
-            tcpClient: None
+            tcp_client: None
         }
     }
 }
 
 impl Client for TcpClient {
-    fn connect(&mut self, timeout: Duration) -> Result<bool, ConnectError> {
-        let stream = TcpStream::connect("127.0.0.1:34254")?;
+    fn connect(&mut self, timeout: Duration) -> Result<(), ConnectError> {
+        let addr = format!("{}:{}", self.host, self.port);
+        let stream = TcpStream::connect(addr)?;
         stream.set_write_timeout(Some(timeout))?;
         stream.set_read_timeout(Some(timeout))?;
-        self.tcpClient = Some(stream);
-        Ok(true)
+        self.tcp_client = Some(stream);
+        Ok(())
     }
 
-    fn send(&mut self, event: &Event) -> Result<(), SendError> {
-        let proto_event = codec::event_to_proto(event);
+    fn send(&mut self, events: &Vec<Event>) -> Result<(), SendError> {
 
-        if let Some(ref mut client) = self.tcpClient {
-            let size = proto_event.compute_size();
-            let bytes = proto_event.write_to_bytes()?;
-            client.write(&[(size >> 24 & 0xFFFFFF) as u8])?;
-            client.write(&[(size >> 16 & 0xFFFFFF) as u8])?;
-            client.write(&[(size >> 8 & 0xFFFFFF) as u8])?;
-            client.write(&[(size & 0xFFFFFF) as u8])?;
-            client.write(&[(size & 0xFFFFFF) as u8])?;
+        if let Some(ref mut client) = self.tcp_client {
+            let msg = codec::events_to_message(events);
+            let size = msg.compute_size();
+            let bytes = msg.write_to_bytes()?;
+            client.write_all(&[((size >> 24) & 0xFF) as u8])?;
+            client.write_all(&[((size >> 16) & 0xFF) as u8])?;
+            client.write_all(&[((size >> 8) & 0xFF) as u8])?;
+            client.write_all(&[(size & 0xFF) as u8])?;
             client.write_all(&bytes)?;
+            client.flush()?;
 
             let mut read_size_buf: [u8; 4] = [0, 0, 0, 0];
-            client.read_exact(&mut read_size_buf);
+            client.read_exact(&mut read_size_buf)?;
             let read_size: u32 = ((read_size_buf[0] as u32) << 24)
                 + ((read_size_buf[1] as u32) << 16)
                 + ((read_size_buf[2] as u32) << 8)
                 + (read_size_buf[3] as u32);
 
+
+            let mut resp = client.take(read_size as u64);
             let mut response_vec: Vec<u8> = Vec::with_capacity(read_size as usize);
-            client.read_exact(&mut response_vec);
+            resp.read_to_end(&mut response_vec)?;
+
             let msg: proto::Msg = parse_from_bytes(&response_vec)?;
 
             if msg.has_ok() {
@@ -71,21 +75,16 @@ impl Client for TcpClient {
             }
             else {
                 let msg_error = MsgError {
-                    message: "Unknown error during Riemann send".to_owned()
+                    message: format!("Unknown error during Riemann send. Msg was {:?}", msg)
                 };
                 // TODO
                 return Err(SendError::MsgError(msg_error))
             }
         }
-        // TODO
-        Ok(())
-    }
 
-    fn send_events(events: &Vec<Event>) -> Result<bool, bool> {
-        Ok(true)
-    }
-
-    fn close() -> Result<bool, bool> {
-        Ok(true)
+        let msg_error = MsgError {
+            message: format!("Riemann Client not connected ?")
+        };
+        Err(SendError::MsgError(msg_error))
     }
 }
