@@ -9,8 +9,10 @@ use std::time::Duration;
 use rustmann::client::Client;
 use clap::App;
 use std::net::SocketAddr;
+use std::net::ToSocketAddrs;
 
 fn main() {
+
     // let mut client = tcp::TcpClient::new("127.0.0.1", 5555);
     // let r = client.connect(Duration::new(5, 0));
     // let mut e = event::Event::new();
@@ -19,13 +21,13 @@ fn main() {
     // println!("result : {:?}", result);
 
 
-    let mut client = udp::UdpClient::new("127.0.0.1", 5555, "127.0.0.1", None);
-    let r = client.connect(Duration::new(5, 0));
-    println!("connected : {:?}", r);
-    let mut e = event::Event::new();
-    e.host = Some("localhost".to_owned());
-    let result = client.send(&vec![e]);
-    println!("result : {:?}", result);
+    // let mut client = udp::UdpClient::new("127.0.0.1", 5555, "127.0.0.1", None);
+    // let r = client.connect(Duration::new(5, 0));
+    // println!("connected : {:?}", r);
+    // let mut e = event::Event::new();
+    // e.host = Some("localhost".to_owned());
+    // let result = client.send(&vec![e]);
+    // println!("result : {:?}", result);
 //    let yaml = load_yaml!("cli.yaml");
 //    let matches = App::from_yaml(yaml).get_matches();
     // if let Some(matches) = matches.subcommand_matches("send") {

@@ -3,10 +3,11 @@ use std::time::Duration;
 use std::io;
 use protobuf::ProtobufError;
 use event::RiemannClientError;
+use std::net::{TcpStream};
 
 #[derive(Debug)]
 pub enum ConnectError {
-    IOError(io::Error)
+    IOError(io::Error),
 }
 
 #[derive(Debug)]
@@ -16,6 +17,7 @@ pub enum SendError {
     MsgError(MsgError),
     ClientError(RiemannClientError),
 }
+
 
 impl From<io::Error> for ConnectError {
     fn from(err: io::Error) -> ConnectError {

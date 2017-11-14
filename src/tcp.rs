@@ -1,25 +1,33 @@
-use std::io::prelude::*;
+use std::io::{Write, Read};
 use event::{ Event, MsgError, RiemannClientError };
 use codec;
 use proto::proto;
-use std::net::TcpStream;
+use std::net::{TcpStream, SocketAddr, AddrParseError};
 use std::time::Duration;
 use protobuf::{Message, parse_from_bytes};
 use client::{Client, ConnectError, SendError};
 
-#[derive(Debug)]
-pub struct TcpClient {
-    pub addr: String,
-    pub tcp_client: Option<TcpStream>
+trait ReadWrite : Read + Write {}
 
+impl<T: Read + Write> ReadWrite for T {}
+
+pub struct TcpClient {
+    pub host: String,
+    pub port: u32,
+    pub addr: SocketAddr,
+    pub stream: Option<TcpStream>,
 }
 
 impl TcpClient {
-    pub fn new(host: &str, port: u32) -> TcpClient {
-        TcpClient {
-            addr: format!("{}:{}", host, port),
-            tcp_client: None
-        }
+    pub fn new(host: &str, port: u32)
+               -> Result<TcpClient, AddrParseError> {
+        let addr: SocketAddr = format!("{}:{}", host, port).parse()?;
+        Ok(TcpClient {
+            addr: addr,
+            host: host.to_owned(),
+            port: port,
+            stream: None
+        })
     }
 }
 
@@ -28,13 +36,14 @@ impl Client for TcpClient {
         let stream = TcpStream::connect_timeout(&self.addr, timeout)?;
         stream.set_write_timeout(Some(timeout))?;
         stream.set_read_timeout(Some(timeout))?;
-        self.tcp_client = Some(stream);
+        self.stream = Some(stream);
+
         Ok(())
     }
 
     fn send(&mut self, events: &Vec<Event>) -> Result<(), SendError> {
+        if let Some(ref mut client) = self.stream {
 
-        if let Some(ref mut client) = self.tcp_client {
             let msg = codec::events_to_message(events);
             let size = msg.compute_size();
             let bytes = msg.write_to_bytes()?;
@@ -44,7 +53,6 @@ impl Client for TcpClient {
             client.write_all(&[(size & 0xFF) as u8])?;
             client.write_all(&bytes)?;
             client.flush()?;
-
             let mut read_size_buf: [u8; 4] = [0, 0, 0, 0];
             client.read_exact(&mut read_size_buf)?;
             let read_size: u32 = ((read_size_buf[0] as u32) << 24)
