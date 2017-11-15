@@ -52,6 +52,7 @@ impl From<RiemannClientError> for SendError {
 pub trait Client {
     fn connect(&mut self, timeout: Duration) -> Result<(), ConnectError>;
     fn send(&mut self, events: &Vec<Event>) -> Result<(), SendError>;
+    fn close(&mut self) -> ();
 }
 
 pub trait IndexClient {

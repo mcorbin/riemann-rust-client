@@ -3,26 +3,25 @@ use client::{Client, ConnectError, SendError};
 use std::time::Duration;
 use event::Event;
 use event::{RiemannClientError};
+use std::net::SocketAddr;
 use protobuf::{Message};
 use codec;
 
 #[derive(Debug)]
 pub struct UdpClient {
-    pub bind_addr: String,
-    pub addr: String,
+    pub bind_addr: SocketAddr,
+    pub addr: SocketAddr,
     pub socket: Option<UdpSocket>
 }
 
 const MAX_UDP_SIZE: u32 = 16384;
 
 impl UdpClient {
-    pub fn new(host: &str,
-               port: u32,
-               bind_ip: &str,
-               bind_port: Option<u32>) -> UdpClient {
+    pub fn new(addr: SocketAddr,
+               bind_addr: SocketAddr) -> UdpClient {
         UdpClient {
-            bind_addr: format!("{}:{}", bind_ip, bind_port.unwrap_or(0)),
-            addr: format!("{}:{}", host, port),
+            bind_addr: bind_addr,
+            addr: addr,
             socket: None
         }
     }
@@ -56,6 +55,10 @@ impl Client for UdpClient {
             message: format!("Riemann Client not connected ?")
         };
         Err(SendError::ClientError(error))
+    }
+
+    fn close(&mut self) {
+        self.socket = None;
     }
 
 }

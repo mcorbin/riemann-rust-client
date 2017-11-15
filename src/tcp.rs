@@ -12,22 +12,17 @@ trait ReadWrite : Read + Write {}
 impl<T: Read + Write> ReadWrite for T {}
 
 pub struct TcpClient {
-    pub host: String,
-    pub port: u32,
     pub addr: SocketAddr,
     pub stream: Option<TcpStream>,
 }
 
 impl TcpClient {
-    pub fn new(host: &str, port: u32)
-               -> Result<TcpClient, AddrParseError> {
-        let addr: SocketAddr = format!("{}:{}", host, port).parse()?;
-        Ok(TcpClient {
+    pub fn new(addr: SocketAddr)
+               -> TcpClient {
+        TcpClient {
             addr: addr,
-            host: host.to_owned(),
-            port: port,
             stream: None
-        })
+        }
     }
 }
 
@@ -47,12 +42,15 @@ impl Client for TcpClient {
             let msg = codec::events_to_message(events);
             let size = msg.compute_size();
             let bytes = msg.write_to_bytes()?;
+            // write size
             client.write_all(&[((size >> 24) & 0xFF) as u8])?;
             client.write_all(&[((size >> 16) & 0xFF) as u8])?;
             client.write_all(&[((size >> 8) & 0xFF) as u8])?;
             client.write_all(&[(size & 0xFF) as u8])?;
+            // write msg
             client.write_all(&bytes)?;
             client.flush()?;
+            // read size
             let mut read_size_buf: [u8; 4] = [0, 0, 0, 0];
             client.read_exact(&mut read_size_buf)?;
             let read_size: u32 = ((read_size_buf[0] as u32) << 24)
@@ -60,7 +58,7 @@ impl Client for TcpClient {
                 + ((read_size_buf[2] as u32) << 8)
                 + (read_size_buf[3] as u32);
 
-
+            // read response lmsg
             let mut resp = client.take(read_size as u64);
             let mut response_vec: Vec<u8> = Vec::with_capacity(read_size as usize);
             resp.read_to_end(&mut response_vec)?;
@@ -91,5 +89,9 @@ impl Client for TcpClient {
             message: format!("Riemann Client not connected ?")
         };
         Err(SendError::ClientError(error))
+    }
+
+    fn close(&mut self) {
+        self.stream = None;
     }
 }
