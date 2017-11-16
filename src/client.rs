@@ -1,9 +1,8 @@
-use event::{Event, MsgError};
+use event::{Event, Msg};
 use std::time::Duration;
 use std::io;
 use protobuf::ProtobufError;
 use event::RiemannClientError;
-use std::net::{TcpStream};
 
 #[derive(Debug)]
 pub enum ConnectError {
@@ -14,14 +13,19 @@ pub enum ConnectError {
 pub enum SendError {
     ProtoError(ProtobufError),
     IOError(io::Error),
-    MsgError(MsgError),
+    MsgError(Msg),
     ClientError(RiemannClientError),
 }
-
 
 impl From<io::Error> for ConnectError {
     fn from(err: io::Error) -> ConnectError {
         ConnectError::IOError(err)
+    }
+}
+
+impl From<Msg> for SendError {
+    fn from(err: Msg) -> SendError {
+        SendError::MsgError(err)
     }
 }
 
@@ -34,12 +38,6 @@ impl From<ProtobufError> for SendError {
 impl From<io::Error> for SendError {
     fn from(err: io::Error) -> SendError {
         SendError::IOError(err)
-    }
-}
-
-impl From<MsgError> for SendError {
-    fn from(err: MsgError) -> SendError {
-        SendError::MsgError(err)
     }
 }
 

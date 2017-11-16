@@ -5,6 +5,27 @@ use chrono::{Utc};
 use chrono::TimeZone;
 use event;
 
+pub fn proto_to_msg(proto_msg: &proto::Msg) -> event::Msg {
+    let mut msg = event::Msg::new();
+    if proto_msg.has_error() {
+        msg.error = Some(proto_msg.get_error().to_owned());
+    }
+    if proto_msg.has_ok() {
+        msg.ok = Some(proto_msg.get_ok());
+    }
+    if proto_msg.has_query() {
+        let query = proto_msg.get_query();
+        if query.has_string() {
+            msg.query = Some(query.get_string().to_owned());
+        }
+    }
+    let events = proto_msg.get_events();
+    if events.len() > 0 {
+        msg.events = Some(get_events(&proto_msg));
+    }
+    msg
+}
+
 /// Takes a proto Msg, returns these events.
 ///
 /// # Example

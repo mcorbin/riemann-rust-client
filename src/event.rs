@@ -53,19 +53,41 @@ impl Event {
 }
 
 #[derive(Debug)]
-pub struct MsgError {
-    pub message: String
+pub struct Msg {
+    pub ok: Option<bool>,
+    pub error: Option<String>,
+    pub query: Option<Query>,
+    pub events: Option<Vec<Event>>
 }
 
-impl Error for MsgError {
-    fn description(&self) -> &str {
-        "Error sending events to Riemann"
+impl Msg {
+    pub fn new() -> Msg {
+        Msg {
+            ok: None,
+            error: None,
+            query: None,
+            events: None
+        }
     }
 }
 
-impl fmt::Display for MsgError {
+impl Error for Msg {
+    fn description(&self) -> &str {
+        let error_msg = match self.error {
+            Some(ref e) => e,
+            None => "Unknown error"
+        };
+        error_msg
+    }
+}
+
+impl fmt::Display for Msg {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
-        write!(f, "Error sending events to Riemann : {}", self.message)
+        let error_msg = match self.error {
+            Some(ref e) => e,
+            None => "Unknown error"
+        };
+        write!(f, "{}", error_msg)
     }
 }
 

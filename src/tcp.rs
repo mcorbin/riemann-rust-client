@@ -1,8 +1,8 @@
 use std::io::{Write, Read};
-use event::{ Event, MsgError, RiemannClientError };
+use event::{ Event, RiemannClientError };
 use codec;
 use proto::proto;
-use std::net::{TcpStream, SocketAddr, AddrParseError};
+use std::net::{TcpStream, SocketAddr};
 use std::time::Duration;
 use protobuf::{Message, parse_from_bytes};
 use client::{Client, ConnectError, SendError};
@@ -63,26 +63,20 @@ impl Client for TcpClient {
             let mut response_vec: Vec<u8> = Vec::with_capacity(read_size as usize);
             resp.read_to_end(&mut response_vec)?;
 
-            let msg: proto::Msg = parse_from_bytes(&response_vec)?;
-
-            if msg.has_ok() {
-                let ok = msg.get_ok();
-                if !ok {
-                    // the Msg is on error
-                    let msg_error = MsgError { message: msg.get_error().to_owned() };
-                    // TODO
-                    return Err(SendError::MsgError(msg_error))
+            let proto_msg: proto::Msg = parse_from_bytes(&response_vec)?;
+            let msg = codec::proto_to_msg(&proto_msg);
+            match msg.ok {
+                Some(ok) => {
+                    if !ok {
+                        return Err(SendError::MsgError(msg))
+                    }
+                    else {
+                        return Ok(())
+                    }
                 }
-                else {
-                    return Ok(())
+                None => {
+                    return Err(SendError::MsgError(msg))
                 }
-            }
-            else {
-                let msg_error = MsgError {
-                    message: format!("Unknown error during Riemann send. Msg was {:?}", msg)
-                };
-                // TODO
-                return Err(SendError::MsgError(msg_error))
             }
         }
         let error = RiemannClientError {
