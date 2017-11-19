@@ -357,3 +357,22 @@ fn get_events_test() {
     let result = get_events(&msg);
     assert_eq!(result.len(), 2);
 }
+
+#[test]
+fn proto_to_msg_test() {
+    let mut msg = proto::Msg::new();
+    let mut e1 = proto::Event::new();
+    msg.set_ok(true);
+    let mut query = proto::Query::new();
+    query.set_string("true".to_owned());
+    msg.set_query(query);
+    e1.set_host("foo".to_owned());
+    msg.set_events(RepeatedField::from_vec(vec![e1]));
+    let result = proto_to_msg(&msg);
+    assert_eq!(result.ok, Some(true));
+    assert_eq!(result.query, Some("true".to_owned()));
+    let events = result.events.unwrap();
+    assert_eq!(events.len(), 1);
+    let event = &events[0];
+    assert_eq!(event.host, Some("foo".to_owned()));
+}
