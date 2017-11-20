@@ -1,4 +1,4 @@
-use event::{Event, Msg};
+use event::{Event, Msg, Query};
 use std::time::Duration;
 use std::io;
 use protobuf::ProtobufError;
@@ -53,6 +53,6 @@ pub trait Client {
     fn close(&mut self) -> ();
 }
 
-pub trait IndexClient {
-    fn query(query: &str) -> Result<Vec<Event>, bool>;
+pub trait Index {
+    fn query(&mut self, query: Query) -> Result<Msg, SendError>;
 }

@@ -4,13 +4,38 @@ author: Mathieu Corbin
 about: Awesome Riemann CLI
 args:
 subcommands:
+  - query:
+      about: Query Riemann index
+      args:
+        - protocol:
+            long: protocol
+            required: true
+            value_name: PROTOCOL
+            help: Which protocol to use
+            possible_values:
+              - "tcp"
+            takes_value: true
+        - server:
+            long: server
+            value_name: RIEMANN_HOST
+            help: Riemann server url
+            takes_value: true
+        - port:
+            long: port
+            value_name: PORT
+            help: Riemann port
+            takes_value: true
+        - query:
+            long: query
+            value_name: QUERY
+            help: query
+            takes_value: true
   - send:
       about: Send event to Riemann
       args:
         - protocol:
             long: protocol
             required: true
-            #short: p
             value_name: PROTOCOL
             help: Which protocol to use
             possible_values:

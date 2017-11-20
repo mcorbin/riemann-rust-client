@@ -5,6 +5,13 @@ use chrono::{Utc};
 use chrono::TimeZone;
 use event;
 
+/// Takes a proto Msg, returns an event::Msg
+///
+/// # Example
+///
+/// let mut msg = proto::Msg::new();
+/// let result = proto_to_msg(&msg);
+/// ```
 pub fn proto_to_msg(proto_msg: &proto::Msg) -> event::Msg {
     let mut msg = event::Msg::new();
     if proto_msg.has_error() {

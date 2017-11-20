@@ -1,11 +1,11 @@
 use std::io::{Write, Read};
-use event::{ Event, RiemannClientError };
+use event::{ Event, RiemannClientError, Query, Msg};
 use codec;
 use proto::proto;
 use std::net::{TcpStream, SocketAddr};
 use std::time::Duration;
 use protobuf::{Message, parse_from_bytes};
-use client::{Client, ConnectError, SendError};
+use client::{Client, ConnectError, SendError, Index};
 
 trait ReadWrite : Read + Write {}
 
@@ -26,13 +26,66 @@ impl TcpClient {
     }
 }
 
+impl Index for TcpClient {
+    fn query(&mut self, query: Query) -> Result<Msg, SendError> {
+        if let Some(ref mut client) = self.stream {
+            let mut msg = proto::Msg::new();
+            let mut q = proto::Query::new();
+            q.set_string(query);
+            msg.set_query(q);
+            let size = msg.compute_size();
+            let bytes = msg.write_to_bytes()?;
+            client.write_all(&[((size >> 24) & 0xFF) as u8])?;
+            client.write_all(&[((size >> 16) & 0xFF) as u8])?;
+            client.write_all(&[((size >> 8) & 0xFF) as u8])?;
+            client.write_all(&[(size & 0xFF) as u8])?;
+            // write msg
+            client.write_all(&bytes)?;
+            client.flush()?;
+
+            let mut read_size_buf: [u8; 4] = [0, 0, 0, 0];
+            client.read_exact(&mut read_size_buf)?;
+            let read_size: u32 = ((read_size_buf[0] as u32) << 24)
+                + ((read_size_buf[1] as u32) << 16)
+                + ((read_size_buf[2] as u32) << 8)
+                + (read_size_buf[3] as u32);
+
+            // read response lmsg
+            let mut resp = client.take(read_size as u64);
+            let mut response_vec: Vec<u8> = Vec::with_capacity(read_size as usize);
+            resp.read_to_end(&mut response_vec)?;
+
+            let proto_msg: proto::Msg = parse_from_bytes(&response_vec)?;
+            let msg = codec::proto_to_msg(&proto_msg);
+            match msg.ok {
+                Some(ok) => {
+                    if !ok {
+                        return Err(SendError::MsgError(msg))
+                    }
+                    else {
+                        return Ok(msg)
+                    }
+                }
+                None => {
+                    return Err(SendError::MsgError(msg))
+                }
+            }
+        }
+        else {
+            let error = RiemannClientError {
+                message: format!("Riemann Client not connected ?")
+            };
+            Err(SendError::ClientError(error))
+        }
+    }
+}
+
 impl Client for TcpClient {
     fn connect(&mut self, timeout: Duration) -> Result<(), ConnectError> {
         let stream = TcpStream::connect_timeout(&self.addr, timeout)?;
         stream.set_write_timeout(Some(timeout))?;
         stream.set_read_timeout(Some(timeout))?;
         self.stream = Some(stream);
-
         Ok(())
     }
 
@@ -79,10 +132,12 @@ impl Client for TcpClient {
                 }
             }
         }
-        let error = RiemannClientError {
-            message: format!("Riemann Client not connected ?")
-        };
-        Err(SendError::ClientError(error))
+        else {
+            let error = RiemannClientError {
+                message: format!("Riemann Client not connected ?")
+            };
+            Err(SendError::ClientError(error))
+        }
     }
 
     fn close(&mut self) {
