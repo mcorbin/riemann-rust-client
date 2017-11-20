@@ -4,71 +4,71 @@ author: Mathieu Corbin
 about: Awesome Riemann CLI
 args:
 subcommands:
-    - send:
-        about: Send event to Riemann
-        args:
-            - protocol:
-                long: protocol
-                required: true
-                #short: p
-                value_name: PROTOCOL
-                help: Which protocol to use
-                possible_values:
-                  - "tcp"
-                  - "udp"
-                takes_value: true
-            - server:
-                long: server
-                #short: se
-                value_name: RIEMANN_HOST
-                help: Riemann server url
-                takes_value: true
-            - port:
-                long: port
-                value_name: PORT
-                help: Riemann port
-                takes_value: true
-            - host:
-                long: host
-                #short: h
-                help: Event host
-                takes_value: true
-            - service:
-                long: service
-                #short: s
-                help: Event service
-                takes_value: true
-            - state:
-                long: state
-                #short: st
-                help: Event state
-                takes_value: true
-            - description:
-                long: description
-                #short: d
-                help: Event description
-                takes_value: true
-            - ttl:
-                long: ttl
-                help: Event TTL
-                takes_value: true
-            - metric:
-                long: metric
-                #short: m
-                help: Event metric
-                takes_value: true
-            - time:
-                long: time
-                help: Event time
-                takes_value: true
-            - tags:
-                long: tags
-                help: Event tags
-                multiple: true
-                takes_value: true
-            - attributes:
-                long: attributes
-                #short: a
-                help: Event attributes
-                multiple: true
-                takes_value: true
+  - send:
+      about: Send event to Riemann
+      args:
+        - protocol:
+            long: protocol
+            required: true
+            #short: p
+            value_name: PROTOCOL
+            help: Which protocol to use
+            possible_values:
+              - "tcp"
+              - "udp"
+            takes_value: true
+        - server:
+            long: server
+            #short: se
+            value_name: RIEMANN_HOST
+            help: Riemann server url
+            takes_value: true
+        - port:
+            long: port
+            value_name: PORT
+            help: Riemann port
+            takes_value: true
+        - host:
+            long: host
+            #short: h
+            help: Event host
+            takes_value: true
+        - service:
+            long: service
+            #short: s
+            help: Event service
+            takes_value: true
+        - state:
+            long: state
+            #short: st
+            help: Event state
+            takes_value: true
+        - description:
+            long: description
+            #short: d
+            help: Event description
+            takes_value: true
+        - ttl:
+            long: ttl
+            help: Event TTL
+            takes_value: true
+        - metric:
+            long: metric
+            #short: m
+            help: Event metric
+            takes_value: true
+        - time:
+            long: time
+            help: Event time
+            takes_value: true
+        - tags:
+            long: tags
+            help: Event tags
+            multiple: true
+            takes_value: true
+        - attributes:
+            long: attributes
+            #short: a
+            help: Event attributes
+            multiple: true
+            takes_value: true
